@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 4rem auto; background: white;">
+    <h2 style="text-align: center; margin-bottom: 2rem;">📚 Library Login</h2>
+    
+    <!-- Tab Navigation -->
+    <div style="display: flex; margin-bottom: 2rem; border-bottom: 2px solid #e0e0e0;">
+        <a href="?type=student" 
+           style="flex: 1; text-align: center; padding: 1rem; text-decoration: none; font-weight: 600; transition: all 0.3s; {% if user_type == 'student' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0;{% else %}color: #666;{% endif %}"
+           onmouseover="if(!'{{ user_type }}'=='student') this.style.color='#667eea'"
+           onmouseout="if(!'{{ user_type }}'=='student') this.style.color='#666'">
+            👨‍🎓 Student Login
+        </a>
+        <a href="?type=admin" 
+           style="flex: 1; text-align: center; padding: 1rem; text-decoration: none; font-weight: 600; transition: all 0.3s; {% if user_type == 'admin' %}background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; border-radius: 8px 8px 0 0;{% else %}color: #666;{% endif %}"
+           onmouseover="if(!'{{ user_type }}'=='admin') this.style.color='#eb3349'"
+           onmouseout="if(!'{{ user_type }}'=='admin') this.style.color='#666'">
+            👨‍💼 Admin Login
+        </a>
+    </div>
+    
+    <!-- Login Form -->
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="login_type" value="{{ user_type }}">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: #555; font-weight: 600;">
+                {% if user_type == 'admin' %}
+                    👨‍💼 Admin Username
+                {% else %}
+                    👤 Student Username
+                {% endif %}
+            </label>
+            <input type="text" name="username" required 
+                   style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: border 0.3s;" 
+                   onfocus="this.style.borderColor='{% if user_type == 'admin' %}#eb3349{% else %}#667eea{% endif %}'" 
+                   onblur="this.style.borderColor='#e0e0e0'"
+                   placeholder="Enter your username">
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: #555; font-weight: 600;">🔒 Password</label>
+            <input type="password" name="password" required 
+                   style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: border 0.3s;" 
+                   onfocus="this.style.borderColor='{% if user_type == 'admin' %}#eb3349{% else %}#667eea{% endif %}'" 
+                   onblur="this.style.borderColor='#e0e0e0'"
+                   placeholder="Enter your password">
+        </div>
+        
+        <button type="submit" class="btn" 
+                style="width: 100%; padding: 0.9rem; font-size: 1.1rem; {% if user_type == 'admin' %}background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);{% endif %}">
+            {% if user_type == 'admin' %}
+                🔐 Login as Admin
+            {% else %}
+                🔐 Login as Student
+            {% endif %}
+        </button>
+    </form>
+    
+    {% if user_type == 'student' %}
+    <div style="margin-top: 1.5rem; text-align: center; padding-top: 1.5rem; border-top: 1px solid #e0e0e0;">
+        <p style="color: #666;">New student? <a href="{% url 'register' %}" style="color: #667eea; text-decoration: none; font-weight: 600;">Register here</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

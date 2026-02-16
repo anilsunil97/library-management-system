@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>👨‍🎓 Student Dashboard</h2>
+    <p style="color: #666; font-size: 1.1rem;">Welcome back! Manage your borrowed books and explore our collection.</p>
+    {% if student.total_fine > 0 %}
+    <div style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+        <strong>⚠️ Outstanding Fine: ₹{{ student.total_fine }}</strong> - Please pay at the library counter
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3 style="color: #eb3349;">📖 My Borrowed Books</h3>
+    {% if borrowed_books %}
+    <table>
+        <thead>
+            <tr>
+                <th>📚 Book Title</th>
+                <th>✍️ Author</th>
+                <th>📅 Borrow Date</th>
+                <th>⏰ Due Date</th>
+                <th>💰 Current Fine</th>
+                <th>⚡ Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in borrowed_books %}
+            <tr {% if record.days_overdue > 0 %}style="background: #fff3cd;"{% endif %}>
+                <td><strong>{{ record.book.title }}</strong></td>
+                <td>{{ record.book.author }}</td>
+                <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                <td>
+                    {{ record.due_date|date:"M d, Y" }}
+                    {% if record.days_overdue > 0 %}
+                    <span style="background: #eb3349; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.85rem; margin-left: 0.5rem;">
+                        {{ record.days_overdue }} days overdue
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if record.calculate_fine > 0 %}
+                    <span style="color: #eb3349; font-weight: 600;">₹{{ record.calculate_fine }}</span>
+                    {% else %}
+                    <span style="color: #38ef7d; font-weight: 600;">₹0</span>
+                    {% endif %}
+                </td>
+                <td><a href="{% url 'return_book' record.id %}" class="btn btn-danger">Return Book</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; margin-top: 1rem;">
+        <p style="font-size: 1.1rem; color: #666;">📭 No borrowed books yet. Browse available books below!</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if returned_books %}
+<div class="card" style="border-left: 4px solid #f45c43;">
+    <h3 style="color: #eb3349;">💰 Unpaid Fines</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>📚 Book Title</th>
+                <th>📅 Return Date</th>
+                <th>💰 Fine Amount</th>
+                <th>⚡ Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in returned_books %}
+            <tr>
+                <td><strong>{{ record.book.title }}</strong></td>
+                <td>{{ record.return_date|date:"M d, Y - h:i A" }}</td>
+                <td><span style="color: #eb3349; font-weight: 600; font-size: 1.1rem;">₹{{ record.fine_amount }}</span></td>
+                <td><a href="{% url 'pay_fine' record.id %}" class="btn btn-success">Mark as Paid</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 8px;">
+        <p style="color: #856404; margin: 0;">💡 Please pay fines at the library counter and click "Mark as Paid" after payment.</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 style="color: #11998e;">📚 Available Books</h3>
+    
+    <!-- Search Bar -->
+    <form method="get" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; gap: 0.5rem;">
+            <input 
+                type="text" 
+                name="search" 
+                placeholder="🔍 Search by title, author, or ISBN..." 
+                value="{{ search_query }}"
+                style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 1rem; transition: border 0.3s;"
+                onfocus="this.style.borderColor='#11998e'" 
+                onblur="this.style.borderColor='#e0e0e0'"
+            >
+            <button type="submit" class="btn btn-success" style="padding: 0.75rem 2rem;">Search</button>
+            {% if search_query %}
+            <a href="{% url 'student_dashboard' %}" class="btn" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+    
+    {% if search_query %}
+    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #e3f2fd; border-radius: 8px; color: #1976d2;">
+        <strong>Search results for:</strong> "{{ search_query }}" - Found {{ available_books.count }} book(s)
+    </div>
+    {% endif %}
+    
+    {% if available_books %}
+    <table>
+        <thead>
+            <tr>
+                <th>📚 Title</th>
+                <th>✍️ Author</th>
+                <th>🔢 ISBN</th>
+                <th>✅ Available</th>
+                <th>⚡ Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in available_books %}
+            <tr>
+                <td><strong>{{ book.title }}</strong></td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.isbn }}</td>
+                <td><span style="background: #38ef7d; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-weight: 600;">{{ book.available }}</span></td>
+                <td><a href="{% url 'borrow_book' book.id %}" class="btn btn-success">Borrow Now</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; background: #fff3cd; border-radius: 8px; margin-top: 1rem;">
+        <p style="font-size: 1.1rem; color: #856404;">
+            {% if search_query %}
+            😕 No books found matching "{{ search_query }}". Try a different search term.
+            {% else %}
+            📭 No books available at the moment.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <h3 style="color: white;">ℹ️ Library Rules</h3>
+    <ul style="line-height: 1.8; margin-left: 1.5rem;">
+        <li>Books must be returned within 14 days</li>
+        <li>Late return fine: ₹1 per day after due date</li>
+        <li>Pay fines at the library counter</li>
+        <li>Take care of borrowed books</li>
+    </ul>
+</div>
+{% endblock %}

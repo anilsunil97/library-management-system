@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>👨‍💼 Admin Dashboard</h2>
+    <p style="color: #666; font-size: 1.1rem; margin-bottom: 1.5rem;">Manage your library system efficiently.</p>
+    <a href="/admin/" class="btn">🔧 Go to Admin Panel</a>
+</div>
+
+<div class="stats">
+    <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h4>📚 Total Books</h4>
+        <div class="number">{{ books.count }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+        <h4>👨‍🎓 Total Students</h4>
+        <div class="number">{{ students.count }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);">
+        <h4>📖 Active Borrows</h4>
+        <div class="number">{{ borrow_records.count }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <h4>⏳ Pending Approvals</h4>
+        <div class="number">{{ pending_students.count }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+        <h4>⚠️ Overdue Books</h4>
+        <div class="number">{{ overdue_records|length }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+        <h4>💰 Unpaid Fines</h4>
+        <div class="number">{{ unpaid_fines.count }}</div>
+    </div>
+</div>
+
+{% if pending_students %}
+<div class="card" style="border-left: 4px solid #f45c43;">
+    <h3 style="color: #eb3349;">⏳ Pending Student Approvals</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Name</th>
+                <th>👤 Username</th>
+                <th>🎓 Student ID</th>
+                <th>📋 Roll No</th>
+                <th>📱 Phone</th>
+                <th>📅 Registration Date</th>
+                <th>⚡ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in pending_students %}
+            <tr>
+                <td><strong>{{ student.user.first_name }} {{ student.user.last_name }}</strong></td>
+                <td>{{ student.user.username }}</td>
+                <td>{{ student.student_id }}</td>
+                <td>{{ student.roll_no }}</td>
+                <td>{{ student.phone }}</td>
+                <td>{{ student.registration_date|date:"M d, Y" }}</td>
+                <td>
+                    <a href="{% url 'approve_student' student.id %}" class="btn btn-success" style="margin-right: 0.5rem;">✓ Approve</a>
+                    <a href="{% url 'reject_student' student.id %}" class="btn btn-danger">✗ Reject</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if overdue_records %}
+<div class="card" style="border-left: 4px solid #fa709a;">
+    <h3 style="color: #f5576c;">⚠️ Overdue Books</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>👨‍🎓 Student</th>
+                <th>📚 Book</th>
+                <th>📅 Borrow Date</th>
+                <th>⏰ Due Date</th>
+                <th>⚠️ Days Overdue</th>
+                <th>💰 Current Fine</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in overdue_records %}
+            <tr style="background: #fff3cd;">
+                <td><strong>{{ record.student.user.username }}</strong></td>
+                <td>{{ record.book.title }}</td>
+                <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                <td>{{ record.due_date|date:"M d, Y" }}</td>
+                <td><span style="background: #eb3349; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-weight: 600;">{{ record.days_overdue }} days</span></td>
+                <td><span style="color: #eb3349; font-weight: 600; font-size: 1.1rem;">₹{{ record.calculate_fine }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if unpaid_fines %}
+<div class="card" style="border-left: 4px solid #30cfd0;">
+    <h3 style="color: #330867;">💰 Unpaid Fines</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>👨‍🎓 Student</th>
+                <th>📚 Book</th>
+                <th>📅 Return Date</th>
+                <th>💰 Fine Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in unpaid_fines %}
+            <tr>
+                <td><strong>{{ record.student.user.username }}</strong></td>
+                <td>{{ record.book.title }}</td>
+                <td>{{ record.return_date|date:"M d, Y - h:i A" }}</td>
+                <td><span style="color: #eb3349; font-weight: 600; font-size: 1.1rem;">₹{{ record.fine_amount }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 style="color: #667eea;">📚 All Books</h3>
+    
+    <!-- Search Bar -->
+    <form method="get" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; gap: 0.5rem;">
+            <input 
+                type="text" 
+                name="search" 
+                placeholder="🔍 Search books by title, author, or ISBN..." 
+                value="{{ search_query }}"
+                style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 1rem; transition: border 0.3s;"
+                onfocus="this.style.borderColor='#667eea'" 
+                onblur="this.style.borderColor='#e0e0e0'"
+            >
+            <button type="submit" class="btn" style="padding: 0.75rem 2rem;">Search</button>
+            {% if search_query %}
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-danger" style="padding: 0.75rem 1.5rem;">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+    
+    {% if search_query %}
+    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #e3f2fd; border-radius: 8px; color: #1976d2;">
+        <strong>Search results for:</strong> "{{ search_query }}" - Found {{ books.count }} book(s)
+    </div>
+    {% endif %}
+    
+    {% if books %}
+    <table>
+        <thead>
+            <tr>
+                <th>📚 Title</th>
+                <th>✍️ Author</th>
+                <th>🔢 ISBN</th>
+                <th>📦 Total</th>
+                <th>✅ Available</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td><strong>{{ book.title }}</strong></td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.isbn }}</td>
+                <td><span style="background: #667eea; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-weight: 600;">{{ book.quantity }}</span></td>
+                <td><span style="background: #38ef7d; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-weight: 600;">{{ book.available }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; background: #fff3cd; border-radius: 8px; margin-top: 1rem;">
+        <p style="font-size: 1.1rem; color: #856404;">
+            {% if search_query %}
+            😕 No books found matching "{{ search_query }}".
+            {% else %}
+            📭 No books in the system.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3 style="color: #eb3349;">📖 Active Borrows</h3>
+    {% if borrow_records %}
+    <table>
+        <thead>
+            <tr>
+                <th>👨‍🎓 Student</th>
+                <th>📚 Book</th>
+                <th>📅 Borrow Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in borrow_records %}
+            <tr>
+                <td><strong>{{ record.student.user.username }}</strong></td>
+                <td>{{ record.book.title }}</td>
+                <td>{{ record.borrow_date|date:"M d, Y - h:i A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; margin-top: 1rem;">
+        <p style="font-size: 1.1rem; color: #666;">✅ No active borrows at the moment.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
