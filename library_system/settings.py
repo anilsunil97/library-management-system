@@ -77,13 +77,25 @@ WSGI_APPLICATION = 'library_system.wsgi.application'
 
 import dj_database_url
 
+# Ensure database directory exists and is writable
+DB_PATH = BASE_DIR / 'db.sqlite3'
+DB_DIR = DB_PATH.parent
+if not DB_DIR.exists():
+    DB_DIR.mkdir(parents=True, exist_ok=True)
+
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600,
+        default='sqlite:///' + str(DB_PATH.absolute()),
+        conn_max_age=0,  # Disable connection pooling for SQLite
         conn_health_checks=True,
     )
 }
+
+# SQLite specific settings to prevent locking issues
+if 'sqlite' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'] = {
+        'timeout': 20,  # Increase timeout to 20 seconds
+    }
 
 
 # Password validation
