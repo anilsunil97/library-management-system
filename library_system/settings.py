@@ -75,26 +75,36 @@ WSGI_APPLICATION = 'library_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-import dj_database_url
-
 # Ensure database directory exists and is writable
 DB_PATH = BASE_DIR / 'db.sqlite3'
 DB_DIR = DB_PATH.parent
 if not DB_DIR.exists():
     DB_DIR.mkdir(parents=True, exist_ok=True)
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(DB_PATH.absolute()),
-        conn_max_age=0,  # Disable connection pooling for SQLite
-        conn_health_checks=True,
-    )
-}
+# Use environment variable for production, SQLite for development
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# SQLite specific settings to prevent locking issues
-if 'sqlite' in DATABASES['default']['ENGINE']:
-    DATABASES['default']['OPTIONS'] = {
-        'timeout': 20,  # Increase timeout to 20 seconds
+if DATABASE_URL:
+    # Production: Use dj_database_url for PostgreSQL/MySQL
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    # Development: Use simple SQLite configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(DB_PATH),
+            'OPTIONS': {
+                'timeout': 30,  # 30 seconds timeout
+            },
+            'CONN_MAX_AGE': 0,  # No connection pooling
+        }
     }
 
 
