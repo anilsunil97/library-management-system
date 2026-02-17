@@ -5,6 +5,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from django.db import models
+from django.http import JsonResponse
+from django.conf import settings
+import os
 from .models import Book, Student, BorrowRecord
 
 def register_view(request):
@@ -252,3 +255,38 @@ def pay_fine(request, record_id):
         
         messages.success(request, f'Fine of ₹{record.fine_amount} paid successfully!')
     return redirect('student_dashboard')
+
+
+def debug_database(request):
+    """Debug view to check database configuration"""
+    db_config = settings.DATABASES['default']
+    
+    info = {
+        'database_engine': db_config.get('ENGINE', 'Not set'),
+        'database_name': db_config.get('NAME', 'Not set'),
+        'database_host': db_config.get('HOST', 'Not set'),
+        'has_database_url': 'Yes' if os.environ.get('DATABASE_URL') else 'No',
+        'is_vercel': 'Yes' if os.environ.get('VERCEL') else 'No',
+        'database_url_preview': os.environ.get('DATABASE_URL', 'Not set')[:50] + '...' if os.environ.get('DATABASE_URL') else 'Not set',
+    }
+    
+    # Try to connect
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        info['connection_test'] = 'SUCCESS'
+        
+        # Try to query auth_user
+        try:
+            from django.contrib.auth.models import User
+            info['user_count'] = User.objects.count()
+            info['auth_user_table'] = 'EXISTS'
+        except Exception as e:
+            info['auth_user_table'] = f'ERROR: {str(e)}'
+            info['user_count'] = 'N/A'
+            
+    except Exception as e:
+        info['connection_test'] = f'FAILED: {str(e)}'
+    
+    return JsonResponse(info, json_dumps_params={'indent': 2})

@@ -13,4 +13,5 @@ urlpatterns = [
     path('pay-fine/<int:record_id>/', views.pay_fine, name='pay_fine'),
     path('approve-student/<int:student_id>/', views.approve_student, name='approve_student'),
     path('reject-student/<int:student_id>/', views.reject_student, name='reject_student'),
+    path('debug-db/', views.debug_database, name='debug_database'),  # Debug endpoint
 ]
