@@ -4,7 +4,10 @@
     {
       "src": "library_system/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+      "config": { 
+        "maxLambdaSize": "15mb", 
+        "runtime": "python3.12"
+      }
     },
     {
       "src": "build_files.sh",
@@ -23,5 +26,8 @@
       "src": "/(.*)",
       "dest": "library_system/wsgi.py"
     }
-  ]
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "library_system.settings"
+  }
 }
