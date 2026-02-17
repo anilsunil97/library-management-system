@@ -94,6 +94,7 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
+    print(f"✓ Using PostgreSQL database from DATABASE_URL")
 else:
     # Development: Use simple SQLite configuration
     DATABASES = {
@@ -106,6 +107,10 @@ else:
             'CONN_MAX_AGE': 0,  # No connection pooling
         }
     }
+    print(f"⚠️  Using SQLite database (not suitable for Vercel!)")
+    if os.environ.get('VERCEL'):
+        print("❌ ERROR: Running on Vercel but DATABASE_URL not set!")
+        print("   Add DATABASE_URL environment variable in Vercel settings")
 
 
 # Password validation
