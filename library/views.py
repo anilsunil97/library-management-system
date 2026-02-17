@@ -9,46 +9,62 @@ from .models import Book, Student, BorrowRecord
 
 def register_view(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        student_id = request.POST['student_id']
-        roll_no = request.POST['roll_no']
-        phone = request.POST['phone']
-        
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match')
+        try:
+            username = request.POST.get('username', '').strip()
+            email = request.POST.get('email', '').strip()
+            password = request.POST.get('password', '')
+            confirm_password = request.POST.get('confirm_password', '')
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            student_id = request.POST.get('student_id', '').strip()
+            roll_no = request.POST.get('roll_no', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            
+            # Validation
+            if not all([username, email, password, confirm_password, first_name, last_name, student_id, roll_no, phone]):
+                messages.error(request, 'All fields are required')
+                return render(request, 'register.html')
+            
+            if password != confirm_password:
+                messages.error(request, 'Passwords do not match')
+                return render(request, 'register.html')
+            
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'Username already exists')
+                return render(request, 'register.html')
+            
+            if User.objects.filter(email=email).exists():
+                messages.error(request, 'Email already exists')
+                return render(request, 'register.html')
+            
+            if Student.objects.filter(student_id=student_id).exists():
+                messages.error(request, 'Student ID already exists')
+                return render(request, 'register.html')
+            
+            # Create user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Create student profile
+            Student.objects.create(
+                user=user,
+                student_id=student_id,
+                roll_no=roll_no,
+                phone=phone,
+                is_approved=False
+            )
+            
+            messages.success(request, 'Registration successful! Please wait for admin approval.')
+            return redirect('login')
+            
+        except Exception as e:
+            messages.error(request, f'Registration failed: {str(e)}')
             return render(request, 'register.html')
-        
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
-            return render(request, 'register.html')
-        
-        if Student.objects.filter(student_id=student_id).exists():
-            messages.error(request, 'Student ID already exists')
-            return render(request, 'register.html')
-        
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name
-        )
-        
-        Student.objects.create(
-            user=user,
-            student_id=student_id,
-            roll_no=roll_no,
-            phone=phone,
-            is_approved=False
-        )
-        
-        messages.success(request, 'Registration successful! Please wait for admin approval.')
-        return redirect('login')
     
     return render(request, 'register.html')
 
